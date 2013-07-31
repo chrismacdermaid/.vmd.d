@@ -1,4 +1,6 @@
-proc reload { mol } {
+proc reload {{mol {top}}} {
+
+    if {$mol == "top"} {set mol [molinfo top]}
 
     set newmol -1
 

@@ -32,7 +32,7 @@ proc make_psf {mol {topologies def}} {
     set solventnames [lsort -unique -ascii [$sel get resname]]
     $sel delete
 
-    set fragsperseg_list [lrepeat [llength $resnames] 500]
+    set fragsperseg_list [lrepeat [llength $resnames] 2000]
 
     set opt_list [lrepeat [llength $resnames] ""]
 
