@@ -6,6 +6,9 @@ proc make_psf {mol {topologies def}} {
 
     package require psfgen
 
+    ## Reanalyze mol since we use some built in vmd macros below
+    mol reanalyze $mol
+
     ## Cleanup psfgen
     psfcontext reset
 
