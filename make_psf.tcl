@@ -72,16 +72,30 @@ proc make_psf {mol {topologies def}} {
             segment $segname {
 
                 set outname [format "%s_%s.pdb" $segname $rn]
-
                 set sel [atomselect $mol "fragment $subfragments"]
 
                 ## Renumber the resids so they don't overlap.
                 set n1 [$sel num]; set n2 [llength $subfragments]
-                set n2 [expr {$n1 / $n2}]
 
-                set resids {}
-                for {set i 1; set j 0} {$j < $n1} {incr i; incr j $n2} {lappend resids [lrepeat $n2 $i]};
-                $sel set resid [join $resids]
+                ## Check if n2 cleanly divides n1 (no missing atoms),
+                ## this is not fool-proof but should work most of the
+                ## time
+                if {[expr {$n1 % $n2}] != 0} { #; Slow, but OK for missing atoms
+                    set resid 1
+                    foreach f $subfragments {
+                        set sel2 [atomselect $mol "fragment $f"]
+                        $sel2 set resid $resid
+                        $sel2 delete
+                        incr resid
+                    }
+
+                } else { #; Fast, but assumes all fragments have the same number of atoms
+
+                    set n2 [expr {$n1 / $n2}]; # This assumes no missing atoms...
+                    set resids {}
+                    for {set i 1; set j 0} {$j < $n1} {incr i; incr j $n2} {lappend resids [lrepeat $n2 $i]};
+                    $sel set resid [join $resids]
+                }
 
                 ## Writeout the PDB for the collection of fragments
                 $sel set segname $segname
