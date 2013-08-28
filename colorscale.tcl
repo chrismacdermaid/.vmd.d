@@ -1,6 +1,19 @@
-## Apply custom colorscales
+## Apply custom colors to VMD
 
-proc setcolorscale {scalename {reverse 0}} {
+  # +-----------------------------------------+ 
+  # | Useful commands:                        | 
+  # | setcolorscale scale ?reverse? ?{order}? | 
+  # | setcolors scale ?reverse? ?{order}?     | 
+  # | listcolorscales                         | 
+  # | listcolorscalevalues                    | 
+  # | combinecolorscales {scales}             | 
+  # +-----------------------------------------+ 
+
+# +---------------------+
+# | Set the color scale |
+# +---------------------+
+
+proc setcolorscale {scalename {reverse 0} {order {}}} {
 
     global mycolors
 
@@ -28,6 +41,20 @@ proc setcolorscale {scalename {reverse 0}} {
 
     }
 
+    if {$reverse} {set colors [lreverse $colors]}
+
+    ## Manually change the ordering of the colorscale values
+    if {$order != {}} {
+        set newcolors $colors
+        set i 0
+        foreach x $order {
+            lset newcolors $i [lindex $colors $x]
+            incr i
+        }
+        set colors $newcolors
+        unset newcolors
+    }
+
     ## VMD colorscale values
     set min   [expr {[colorinfo num] - 1}]
     set max   [expr {[colorinfo max] - 1}]
@@ -50,15 +77,98 @@ proc setcolorscale {scalename {reverse 0}} {
     }
 
     display update on
-
 }
 
-proc listcolorscales {} {
+# +-----------------+
+# | Set colors 1-33 |
+# +-----------------+
+
+proc setcolors {scalename {reverse 0} {order {}}} {
 
     global mycolors
 
-    return [array names mycolors *]
+    display update off
 
+    set names [array names mycolors *]
+    if {[lsearch -exact $names $scalename] < 0} {
+        set msg [vmdcon -err "Unknown scale name $scalename"]
+        return -code 1 $msg
+    }
+
+    ## Number of colors
+    set n [llength $mycolors($scalename)]
+
+    ## Convert rgb/hex to VMD-RGB values on (0,1) scale
+    set colors {}
+    foreach x $mycolors($scalename) {
+
+        ## Check to see if x is a list or hex..
+        if {[string is list -strict $x] && [llength $x] == 3} {
+            lappend colors [rgb2vmd $x]
+        } else {
+            lappend colors [hex2vmd $x]
+        }
+
+    }
+
+    ## Reverse the color order
+    if {$reverse} {set colors [lreverse $colors]}
+
+    ## Manually change the ordering of the colorscale values
+    if {$order != {}} {
+        set newcolors $colors
+        set i 0
+        foreach x $order {
+            lset newcolors $i [lindex $colors $x]
+            incr i
+        }
+        set colors $newcolors
+        unset newcolors
+    }
+
+    ## Make sure we don't set more than we can use
+    set max [colorinfo num]
+
+    ## Set the colors
+    for {set i 0} {$i < $n && $i < $max} {incr i} {
+        color change rgb $i {*}[lindex $colors $i]
+    }
+
+    display update on
+}
+
+proc listcolorscales {} {
+    global mycolors
+    return [array names mycolors *]
+}
+
+proc listcolorscalevalues {{scalename *}} {
+    global mycolors
+    return [array get mycolors $scalename]
+}
+
+## Combine scales together, save as scale1_scale2_scale3
+proc combinecolorscales {scales} {
+
+    global mycolors
+
+    set names [array names mycolors *]
+    foreach x $scales {
+        if {[lsearch -exact $names $x] < 0} {
+            set msg [vmdcon -err "Unknown scale name $x"]
+            return -code 1 $msg
+        }
+    }
+
+    set combname [join $scales "_"]
+    set mycolors($combname) {}
+    foreach x $scales {
+        lappend mycolors($combname) $mycolors($x)
+    }
+    
+    set mycolors($combname) [join $mycolors($combname)]
+
+    return -code 0
 }
 
 # +---------+
@@ -86,6 +196,7 @@ proc rgb2vmd {rgb} {
     #return [vecscale $rgb .003906250000]
 }
 
+## Convert hex values directly to RGB values on a [0,1) scale
 proc hex2vmd {hex} {
 
     set hex [string trimleft $hex "#"]
@@ -106,9 +217,10 @@ proc hex2vmd {hex} {
 
 proc setmycolors {} {
     global mycolors
+    array unset mycolors *
     array set mycolors {}
 
-    ## ColorBrewer
+    ## ColorBrewer (Hex RGB)
     set mycolors(BrBg)     [list "#8C510A" "#BF812D" "#DFC27D" "#F6E8C3" "#C7EAE5" "#80CDC1" "#35978F" "#01665E"]
     set mycolors(PuBuGn)   [list "#FFF7FB" "#ECE2F0" "#D0D1E6" "#A6BDDB" "#67A9CF" "#3690C0" "#02818A" "#016540"]
     set mycolors(Oranges)  [list "#FFF5EB" "#FEE6CE" "#FDD0A2" "#FDAE6B" "#FD8D3C" "#F16913" "#D94801" "#8C2D04"]
@@ -148,9 +260,9 @@ proc setmycolors {} {
     ## Matlab (specified as RGB tuples)
     set mycolors(jet)      [list  {0 0 256} {0 128 256} {0 256 256} {128 256 128} {256 256 0} {256 128 0} {256 0 0} {128 0 0}]
     set mycolors(hsv)      [list  {256 0 0} {256 192 0} {128 256 0} {0 256 64} {0 256 256} {0 64 256} {128 0 256} {256 0 192}]
-    set mycolors(hot)      [list  {85.3 0 0} {170.6 0 0} {256 0 0} {256 85.3 0} {256 170.6 0} {256 256 0} {256 256 128} {256 256 256}] 
+    set mycolors(hot)      [list  {85.3 0 0} {170.6 0 0} {256 0 0} {256 85.3 0} {256 170.6 0} {256 256 0} {256 256 128} {256 256 256}]
     set mycolors(cool)     [list {0 256 256} {37 219 256} {73 183 256} {110 146 256} {146 110 256} {183 73 256} {219 37 256} {256 0 256}]
-    set mycolors(spring)   [list {256 0 256} {256 37 219} {256 73 183} {256 110 146} {256 146 110} {256 183 73} {256 219 37} {256 256 0}] 
+    set mycolors(spring)   [list {256 0 256} {256 37 219} {256 73 183} {256 110 146} {256 146 110} {256 183 73} {256 219 37} {256 256 0}]
     set mycolors(summer)   [list {0 128 102} {37 146 102} {73 165 102} {110 183 102} {146 201 102} {183 219 102} {219 238 102} {256 256 102}]
     set mycolors(autumn)   [list {256 0 0} {256 37 0} {256 73 0} {256 110 0} {256 146 0} {256 183 0} {256 219 0} {256 256 0}]
     set mycolors(winter)   [list {0 0 256} {0 37 238} {0 73 219} {0 110 201} {0 146 183} {0 183 165} {0 219 146} {0 256 128}]
@@ -161,7 +273,16 @@ proc setmycolors {} {
     ## Custom
     set mycolors(rainbow) [list "#FF0000" "#FF7F00" "#FFFF00" "#00FF00" "#0000FF" "#4B0082" "#8B00FF"]
     set mycolors(bw)      [list "#000000" "#FFFFFF"]
+    set mycolors(basic)   [list "#000000" "#FFFFFF" "#FF0000" "#00FF00" "#0000FF" "#FFFF00" "#00FFFF"\
+                               "#FF00FF" "#C0C0C0" "#808080" "#800000" "#808000" "#008000" "#800080" "#008080" "#000080"]
+
+    ## VMD Defaults
+    set mycolors(vmddefault) [list {254 244 233} {253 228 203} {253 206 158} {253 172 104} {252 139 57} {239 103 18}\
+                                  {212 70 1} {25 179 51} {256 256 256} {256 153 153} {64 192 192} {166 0 166} {128 230 102}\
+                                  {230 102 179} {128 76 0} {128 128 192} {0 0 0} {225 248 5} {140 230 5} {0 230 10} {0 230 128}\
+                                  {0 225 256} {0 194 256} {5 97 171} {2 10 238} {69 0 250} {115 0 230} {230 0 230} {256 0 168}\
+                                  {250 0 58} {207 0 0} {227 89 0} {213 62 79}]
 }
 
 ## Load default colors
-setmycolors
+catch {setmycolors}
