@@ -1,13 +1,13 @@
 ## Apply custom colors to VMD
 
-  # +-----------------------------------------+ 
-  # | Useful commands:                        | 
-  # | setcolorscale scale ?reverse? ?{order}? | 
-  # | setcolors scale ?reverse? ?{order}?     | 
-  # | listcolorscales                         | 
-  # | listcolorscalevalues                    | 
-  # | combinecolorscales {scales}             | 
-  # +-----------------------------------------+ 
+# +-----------------------------------------+
+# | Useful commands:                        |
+# | setcolorscale scale ?reverse? ?{order}? |
+# | setcolors scale ?reverse? ?{order}?     |
+# | listcolorscales                         |
+# | listcolorscalevalues                    |
+# | combinecolorscales {scales}             |
+# +-----------------------------------------+
 
 # +---------------------+
 # | Set the color scale |
@@ -17,13 +17,13 @@ proc setcolorscale {scalename {reverse 0} {order {}}} {
 
     global mycolors
 
-    display update off
-
     set names [array names mycolors *]
     if {[lsearch -exact $names $scalename] < 0} {
         set msg [vmdcon -err "Unknown scale name $scalename"]
         return -code 1 $msg
     }
+
+    display update off
 
     ## Number of colors
     set n [llength $mycolors($scalename)]
@@ -41,6 +41,7 @@ proc setcolorscale {scalename {reverse 0} {order {}}} {
 
     }
 
+    ## Reverse the color order
     if {$reverse} {set colors [lreverse $colors]}
 
     ## Manually change the ordering of the colorscale values
@@ -69,7 +70,7 @@ proc setcolorscale {scalename {reverse 0} {order {}}} {
         set dg [expr {($g2 - $g1)/$range}]
         set db [expr {($b2 - $b1)/$range}]
 
-        ## Loop over color vmd color ids
+        ## Loop over vmd color ids
         for {set l 0} {$l < $range && $k < $max} {incr k; incr l} {
             color change rgb $k [expr {$r1 + ($l * $dr)}]\
                 [expr {$g1 + ($l * $dg)}] [expr {$b1 + ($l * $db)}]
@@ -87,13 +88,13 @@ proc setcolors {scalename {reverse 0} {order {}}} {
 
     global mycolors
 
-    display update off
-
     set names [array names mycolors *]
     if {[lsearch -exact $names $scalename] < 0} {
         set msg [vmdcon -err "Unknown scale name $scalename"]
         return -code 1 $msg
     }
+
+    display update off
 
     ## Number of colors
     set n [llength $mycolors($scalename)]
@@ -165,7 +166,7 @@ proc combinecolorscales {scales} {
     foreach x $scales {
         lappend mycolors($combname) $mycolors($x)
     }
-    
+
     set mycolors($combname) [join $mycolors($combname)]
 
     return -code 0
@@ -209,6 +210,74 @@ proc hex2vmd {hex} {
 
     return [list $r $g $b]
 
+}
+
+proc hsv2rgb {hsv} {
+
+    lassign $hsv h s v
+
+    set twopi 6.28318530717958647692;
+    set t  [expr $twopi * $h];
+    set rv [expr (1.0 + $s * sin($t + $twopi / 3.0)) * $v * 0.5];
+    set gv [expr (1.0 + $s * sin($t - $twopi / 3.0)) * $v * 0.5];
+    set bv [expr (1.0 + $s * sin($t)) * $v * 0.5];
+    return [list $rv $gv $bv]
+}
+
+
+## Not tested....
+proc rgb2hsv {rgb} {
+
+    lassign $rgb r g b
+
+    set x [lsort -increasing $rgb]
+    set min [lindex $x 0]
+    set max [lindex $x end]
+
+    if {$min == $max} {
+        return [list 0.0 0.0 [expr {$min * 0.00390625}]]
+    }
+
+    set d [expr {($r == $min ? $g - $b : ($b == $min ? $r - $g : $b - $r)) * 0.00390625}]
+    set h [expr {$r == $min ? 3 : ($b == $min ? 1 : 5)}]
+
+    set r [expr $r * .00390625]
+    set g [expr $g * .00390625]
+    set b [expr $b * .00390625]
+
+    set H  [expr {60*($h - $d/($max - $min))}]
+    set S  [expr {($max - $min)/$max}]
+    set V  [expr {$max}]
+
+    return [list $H $S $V]
+}
+
+
+# See: http://beesbuzz.biz/code/hsv_color_transforms.php
+# and https://en.wikipedia.org/wiki/YIQ
+# for a nice explination of color transforms
+
+proc transHSV {rgb hsv} {
+
+    global M_PI
+
+    lassign $rgb r g b
+    lassign $hsv H S V
+
+    set VSU [expr {$V*$S*cos($H*$M_PI/180)}]
+    set VSW [expr {$V*$S*sin($H*$M_PI/180)}]
+
+    set rt [expr {(0.299*$V+0.701*$VSU+0.168*$VSW)*$r\
+                      + (0.587*$V-0.587*$VSU+0.330*$VSW)*$g\
+                      + (0.114*$V-0.114*$VSU-0.497*$VSW)*$b}]
+    set gt [expr {(0.299*$V-0.299*$VSU-0.328*$VSW)*$r\
+                      + (0.587*$V+0.413*$VSU+0.035*$VSW)*$g\
+                      + (0.114*$V-0.114*$VSU+0.292*$VSW)*$b}]
+    set bt [expr {(0.299*$V-0.300*$VSU+1.250*$VSW)*$r\
+                      + (0.587*$V-0.588*$VSU-1.050*$VSW)*$g\
+                      + (0.114*$V+0.886*$VSU-0.203*$VSW)*$b}]
+
+    return [list $rt $gt $bt]
 }
 
 # +------------------------+
@@ -258,17 +327,17 @@ proc setmycolors {} {
     set mycolors(PiYG)     [list "#C51B7D" "#DE77AE" "#F1B6DA" "#FDE0EF" "#E6F5D0" "#B8E186" "#7FBC41" "#4D9221"]
 
     ## Matlab (specified as RGB tuples)
-    set mycolors(jet)      [list  {0 0 256} {0 128 256} {0 256 256} {128 256 128} {256 256 0} {256 128 0} {256 0 0} {128 0 0}]
-    set mycolors(hsv)      [list  {256 0 0} {256 192 0} {128 256 0} {0 256 64} {0 256 256} {0 64 256} {128 0 256} {256 0 192}]
-    set mycolors(hot)      [list  {85.3 0 0} {170.6 0 0} {256 0 0} {256 85.3 0} {256 170.6 0} {256 256 0} {256 256 128} {256 256 256}]
-    set mycolors(cool)     [list {0 256 256} {37 219 256} {73 183 256} {110 146 256} {146 110 256} {183 73 256} {219 37 256} {256 0 256}]
-    set mycolors(spring)   [list {256 0 256} {256 37 219} {256 73 183} {256 110 146} {256 146 110} {256 183 73} {256 219 37} {256 256 0}]
-    set mycolors(summer)   [list {0 128 102} {37 146 102} {73 165 102} {110 183 102} {146 201 102} {183 219 102} {219 238 102} {256 256 102}]
-    set mycolors(autumn)   [list {256 0 0} {256 37 0} {256 73 0} {256 110 0} {256 146 0} {256 183 0} {256 219 0} {256 256 0}]
-    set mycolors(winter)   [list {0 0 256} {0 37 238} {0 73 219} {0 110 201} {0 146 183} {0 183 165} {0 219 146} {0 256 128}]
-    set mycolors(copper)   [list {0 0 0} {46 29 18} {91 57 36} {137 86 55} {183 114 73} {229 143 91} {256 171 109} {256 200 127}]
-    set mycolors(pink)     [list {85 0 0} {144 79 79} {185 112 112} {201 161 137} {216 199 158} {230 230 177} {244 244 220} {256 256 256}]
-    set mycolors(bone)     [list {0 0 11} {32 32 53} {64 64 96} {96 107 128} {128 149 160} {160 192 192} {208 224 224} {256 256 256}]
+    set mycolors(jet)      [list  {0 0 255} {0 128 255} {0 255 255} {128 255 128} {255 255 0} {255 128 0} {255 0 0} {128 0 0}]
+    set mycolors(hsv)      [list  {255 0 0} {255 192 0} {128 255 0} {0 255 64} {0 255 255} {0 64 255} {128 0 255} {255 0 192}]
+    set mycolors(hot)      [list  {85.3 0 0} {170.6 0 0} {255 0 0} {255 85.3 0} {255 170.6 0} {255 255 0} {255 255 128} {255 255 255}]
+    set mycolors(cool)     [list {0 255 255} {37 219 255} {73 183 255} {110 146 255} {146 110 255} {183 73 255} {219 37 255} {255 0 255}]
+    set mycolors(spring)   [list {255 0 255} {255 37 219} {255 73 183} {255 110 146} {255 146 110} {255 183 73} {255 219 37} {255 255 0}]
+    set mycolors(summer)   [list {0 128 102} {37 146 102} {73 165 102} {110 183 102} {146 201 102} {183 219 102} {219 238 102} {255 255 102}]
+    set mycolors(autumn)   [list {255 0 0} {255 37 0} {255 73 0} {255 110 0} {255 146 0} {255 183 0} {255 219 0} {255 255 0}]
+    set mycolors(winter)   [list {0 0 255} {0 37 238} {0 73 219} {0 110 201} {0 146 183} {0 183 165} {0 219 146} {0 255 128}]
+    set mycolors(copper)   [list {0 0 0} {46 29 18} {91 57 36} {137 86 55} {183 114 73} {229 143 91} {255 171 109} {255 200 127}]
+    set mycolors(pink)     [list {85 0 0} {144 79 79} {185 112 112} {201 161 137} {216 199 158} {230 230 177} {244 244 220} {255 255 255}]
+    set mycolors(bone)     [list {0 0 11} {32 32 53} {64 64 96} {96 107 128} {128 149 160} {160 192 192} {208 224 224} {255 255 255}]
 
     ## Custom
     set mycolors(rainbow) [list "#FF0000" "#FF7F00" "#FFFF00" "#00FF00" "#0000FF" "#4B0082" "#8B00FF"]
@@ -277,12 +346,19 @@ proc setmycolors {} {
                                "#FF00FF" "#C0C0C0" "#808080" "#800000" "#808000" "#008000" "#800080" "#008080" "#000080"]
 
     ## VMD Defaults
-    set mycolors(vmddefault) [list {254 244 233} {253 228 203} {253 206 158} {253 172 104} {252 139 57} {239 103 18}\
-                                  {212 70 1} {25 179 51} {256 256 256} {256 153 153} {64 192 192} {166 0 166} {128 230 102}\
-                                  {230 102 179} {128 76 0} {128 128 192} {0 0 0} {225 248 5} {140 230 5} {0 230 10} {0 230 128}\
-                                  {0 225 256} {0 194 256} {5 97 171} {2 10 238} {69 0 250} {115 0 230} {230 0 230} {256 0 168}\
-                                  {250 0 58} {207 0 0} {227 89 0} {213 62 79}]
+    set mycolors(vmd) [list {25 51 179} {179 51 25} {89 89 89} {179 102 0} {204 179 25} {128 128 51} {153 153 153}\
+                           {25 179 51} {255 255 255} {255 153 153} {64 192 192} {166 0 166} {128 230 102} {230 102 179} {128 76 0}\
+                           {128 128 192} {0 0 0} {225 248 5} {140 230 5} {0 230 10} {0 230 128} {0 225 255} {0 194 255} {5 97 171}\
+                           {2 10 238} {69 0 250} {115 0 230} {230 0 230} {255 0 168} {250 0 58} {207 0 0} {227 89 0} {0 0 255}]
+
+    ## Drop the saturation of the colors, vmd has some really ugly saturated colors
+    foreach S {0.75 0.50 0.25 0.0} {
+        foreach y $mycolors(vmd) {
+            lappend mycolors(vmd_$S) [transHSV $y [list 1 $S 1]]
+        }
+    }
 }
 
 ## Load default colors
-catch {setmycolors}
+#catch {setmycolors}
+setmycolors
