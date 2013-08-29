@@ -342,8 +342,12 @@ proc setmycolors {} {
     ## Custom
     set mycolors(rainbow) [list "#FF0000" "#FF7F00" "#FFFF00" "#00FF00" "#0000FF" "#4B0082" "#8B00FF"]
     set mycolors(bw)      [list "#000000" "#FFFFFF"]
+
     set mycolors(basic)   [list "#000000" "#FFFFFF" "#FF0000" "#00FF00" "#0000FF" "#FFFF00" "#00FFFF"\
                                "#FF00FF" "#C0C0C0" "#808080" "#800000" "#808000" "#008000" "#800080" "#008080" "#000080"]
+    #
+    set mycolors(solarized) [list "#002b36" "#073642" "#586e75" "#657b83" "#839496" "#93a1a1" "#eee8d5" "#fdf6e3"\
+				 "#b58900" "#cb4b16" "#dc322f" "#d33682" "#6c71c4" "#268bd2" "#2aa198" "#859900"]
 
     ## VMD Defaults
     set mycolors(vmd) [list {25 51 179} {179 51 25} {89 89 89} {179 102 0} {204 179 25} {128 128 51} {153 153 153}\
@@ -360,5 +364,4 @@ proc setmycolors {} {
 }
 
 ## Load default colors
-#catch {setmycolors}
-setmycolors
+catch {setmycolors}
