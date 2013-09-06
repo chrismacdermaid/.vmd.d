@@ -4,10 +4,6 @@ proc reload {{mol {top}}} {
 
     set newmol -1
 
-    if {$mol == "top"} {
-        set mol [molinfo top]
-    }
-
     ## Save represenations and viewpoints
     save_rep 99999 $mol
     save_viewpoint 99999 $mol
@@ -33,4 +29,7 @@ proc reload {{mol {top}}} {
 
     ## Delete old mol
     mol delete $mol
+
+    return $newmol
+
 }
