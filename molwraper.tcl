@@ -16,6 +16,9 @@ proc moll { args } {
         }
 
         addfile {
+
+	    lappend newargs waitfor all
+
             set filename [lindex $newargs 0]
             set retval [mol addfile [file normalize $filename] {*}[lrange $newargs 1 end]]
         }
