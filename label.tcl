@@ -3,9 +3,11 @@ proc labelatoms {sel label {size 1.0} {off {0.5 0.5 0.0}}} {
 
     set molid [$sel molid]
 
-    if {[lsearch -ascii [atomselect keywords] $label] == -1} {
-	set msg [vmdcon -err "Unknown atomselect keyword"]
-	return -code error $msg
+    foreach x $label {
+        if {[lsearch -ascii [atomselect keywords] $x] == -1} {
+            set msg [vmdcon -err "Unknown atomselect keyword: $x"]
+            return -code error $msg
+        }
     }
 
     ## Get the viewpoint for the mol we're labeling
@@ -18,11 +20,11 @@ proc labelatoms {sel label {size 1.0} {off {0.5 0.5 0.0}}} {
     graphics $newmol color 8
 
     foreach x [$sel get x]\
-	y [$sel get y]\
-	z [$sel get z]\
-	w [$sel get $label] {
-	    graphics $newmol text [vecadd [list $x $y $z] $off] $w size $size
-	}
+        y [$sel get y]\
+        z [$sel get z]\
+        w [$sel get $label] {
+            graphics $newmol text [vecadd [list $x $y $z] $off] $w size $size
+        }
 
     ## Make sure the old mol is top
     molinfo $molid set top 1

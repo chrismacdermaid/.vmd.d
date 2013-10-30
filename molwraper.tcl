@@ -12,15 +12,25 @@ proc moll { args } {
 
         new {
             set filename [lindex $newargs 0]
-            set retval [mol new [file normalize $filename] {*}[lrange $newargs 1 end]]
+            catch {mol new [file normalize $filename] {*}[lrange $newargs 1 end]} retval
         }
 
         addfile {
 
-	    lappend newargs waitfor all
+            lappend newargs waitfor all
 
             set filename [lindex $newargs 0]
-            set retval [mol addfile [file normalize $filename] {*}[lrange $newargs 1 end]]
+            catch {mol addfile [file normalize $filename] {*}[lrange $newargs 1 end]} retval
+        }
+
+        -f {
+
+            set retval [moll new [lindex $newargs 0]]
+
+            foreach filename [lrange $newargs 1 end] {
+                moll addfile $filename
+            }
+
         }
 
         reload {
