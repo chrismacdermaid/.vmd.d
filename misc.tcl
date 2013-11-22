@@ -5,3 +5,10 @@
 
 ## Blink Active Window
 proc showme {} {color Display {Background} white; display update; after 100; color Display {Background} black}
+
+## Run scripts silently.
+proc source_silent {args} {
+    foreach f $args {
+	source $f
+    }
+}
