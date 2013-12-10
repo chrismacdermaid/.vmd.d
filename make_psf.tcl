@@ -29,15 +29,19 @@ proc make_psf {mol {topologies def}} {
 
     set sel [atomselect $mol "not water"]
     set resnames [lsort -unique -ascii [$sel get resname]]
+
+    set fragsperseg_list {}
+    set opt_list {}
+    if {[$sel num] > 0} {
+	set fragsperseg_list [lrepeat [llength $resnames] 2000]
+	set opt_list [lrepeat [llength $resnames] ""]
+    }
+
     $sel delete
 
     set sel [atomselect $mol "water"]
     set solventnames [lsort -unique -ascii [$sel get resname]]
     $sel delete
-
-    set fragsperseg_list [lrepeat [llength $resnames] 2000]
-
-    set opt_list [lrepeat [llength $resnames] ""]
 
     ## Special options for water
     if {[llength $solventnames] > 0} {
