@@ -19,7 +19,7 @@ atomselect macro calcium { name "Ca\+" or resname "CA" or resname "CAL" }
 atomselect macro sodium { name "Na\+" or resname "NA" }
 
 # added Jerome's lipids and cholesterol
-atomselect macro lipid { resname DLPE DMPC GPC LPPC PALM PC PGCL POPC POUC POPE CHL1 CLOL }
+atomselect macro lipid { resname DLPE DMPC GPC LPPC PALM PC PGCL POPC POUC POPE CHL1 CLOL DPPC }
 atomselect macro lnoh { lipid noh }
 
-atomselect macro popchead { resname POPC and name N C13 C14 C15 C12 C11 P O13 O14 O11 O12 C1 C2 O21 C21 O22 C22 C3 O31 }
+atomselect macro pchead {lipid and name N C13 C14 C15 C12 C11 P O13 O14 O11 O12 C1 C2 O21 C21 O22 C22 C3 O31 }

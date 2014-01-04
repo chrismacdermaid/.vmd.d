@@ -6,6 +6,9 @@
 ## Blink Active Window
 proc showme {} {color Display {Background} white; display update; after 100; color Display {Background} black}
 
+## Number of unique resdiues in selection
+proc nres {sel} {return [llength [lsort -unique [$sel get residue]]]}
+
 ## Run scripts silently.
 proc source_silent {args} {foreach f $args {source $f}}
 
@@ -33,3 +36,4 @@ proc cpk {repid {molid top}} {
     }
 
 }
+
