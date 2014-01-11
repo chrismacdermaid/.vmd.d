@@ -1,4 +1,5 @@
 ## Apply custom colors to VMD
+## Chris MacDermaid, ICMS@Temple University, 2013. chris.macdermaid@gmail.com
 
 # +-----------------------------------------+
 # | Useful commands:                        |
