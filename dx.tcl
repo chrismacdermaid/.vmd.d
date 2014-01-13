@@ -85,7 +85,7 @@ proc read_dx {fname data} {
 
     ## Transpose u so that x dimension
     ## changes fastest, then y then z.
-
+    ## Convert from kT/e =0.0256 V 
     upvar 0 dx_data(nx) nx
     upvar 0 dx_data(ny) ny
     upvar 0 dx_data(nz) nz
@@ -95,13 +95,13 @@ proc read_dx {fname data} {
         for {set j 0} {$j < $ny} {incr j} {
             for {set i 0} {$i < $nx} {incr i} {
                 set idx [expr {$i * $nyz + $j * $nz + $k}]
-                lappend dx_data(u) [lindex $temp $idx]
+                lappend dx_data(u) [expr {[lindex $temp $idx] * 0.0256}]
             }
         }
     }
 
-    puts "Read [llength $temp] potential values"
-    puts "Read [llength $dx_data(u)] potential values"
+    #puts "Read [llength $temp] potential values"
+    #puts "Read [llength $dx_data(u)] potential values"
     unset temp
 
     return -code ok
@@ -127,6 +127,7 @@ proc ex_dx {data {along X} {slice_offset 0.5}} {
     switch -exact $along {
 
         X {
+	    set ndim1 $nz; set ndim2 $ny
             set iso [expr {int($nx * $slice_offset)}]
 
             for {set i 0} {$i < $nz} {incr i} {
@@ -140,6 +141,7 @@ proc ex_dx {data {along X} {slice_offset 0.5}} {
 
 
         Y {
+	    set ndim1 $nz; set ndim2 $nx
             set iso [expr {int($ny * $slice_offset)}]
             set offset [expr {$iso * $nx}]
 
@@ -154,6 +156,7 @@ proc ex_dx {data {along X} {slice_offset 0.5}} {
 
 
         Z {
+	    set ndim1 $ny; set ndim2 $nx
             set iso [expr {int($nz * $slice_offset)}]
             set offset [expr {$iso * $nx * $ny}]
 
@@ -167,8 +170,12 @@ proc ex_dx {data {along X} {slice_offset 0.5}} {
         }
     }
 
+    ## Output into something gnuplot understands    
+    set i 0
     foreach p $pot {x y} $grid {
         puts [format "%10.4g %10.4g %10.4g" $x $y $p]
+	incr i
+	if {[expr {$i % $ndim2}] == 0} {puts -nonewline "\n"}
     }
 
     return -code ok
