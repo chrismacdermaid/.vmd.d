@@ -1,4 +1,5 @@
 ## Read an opendx file into memory and manipulate the data
+## Useful for volmap extraction and manipulation
 
 #         object 1 class gridpositions counts nx ny nz
 #         origin xmin ymin zmin
@@ -85,7 +86,7 @@ proc read_dx {fname data} {
 
     ## Transpose u so that x dimension
     ## changes fastest, then y then z.
-    ## Convert from kT/e =0.0256 V 
+    ## Convert from kT/e =0.0256 V
     upvar 0 dx_data(nx) nx
     upvar 0 dx_data(ny) ny
     upvar 0 dx_data(nz) nz
@@ -116,7 +117,7 @@ proc ex_dx {data {along X} {slice_offset 0.5}} {
         return -code error
     }
 
-    ## Create references to data
+    ## Create temporary references to data
     ## e.g. upvar 0 dx_data(nx) nx
     foreach x [array names dx_data *] {
         upvar 0 dx_data($x) $x
@@ -126,8 +127,9 @@ proc ex_dx {data {along X} {slice_offset 0.5}} {
     set grid {}
     switch -exact $along {
 
+        x -
         X {
-	    set ndim1 $nz; set ndim2 $ny
+            set ndim1 $nz; set ndim2 $ny
             set iso [expr {int($nx * $slice_offset)}]
 
             for {set i 0} {$i < $nz} {incr i} {
@@ -139,9 +141,9 @@ proc ex_dx {data {along X} {slice_offset 0.5}} {
             }
         }
 
-
+        y -
         Y {
-	    set ndim1 $nz; set ndim2 $nx
+            set ndim1 $nz; set ndim2 $nx
             set iso [expr {int($ny * $slice_offset)}]
             set offset [expr {$iso * $nx}]
 
@@ -154,9 +156,9 @@ proc ex_dx {data {along X} {slice_offset 0.5}} {
             }
         }
 
-
+        z -
         Z {
-	    set ndim1 $ny; set ndim2 $nx
+            set ndim1 $ny; set ndim2 $nx
             set iso [expr {int($nz * $slice_offset)}]
             set offset [expr {$iso * $nx * $ny}]
 
@@ -168,21 +170,109 @@ proc ex_dx {data {along X} {slice_offset 0.5}} {
                 }
             }
         }
+
+        default {puts "unknown option $along"; return -code error }
     }
 
-    ## Output into something gnuplot understands    
+    ## Output into something gnuplot understands
     set i 0
     foreach p $pot {x y} $grid {
         puts [format "%10.4g %10.4g %10.4g" $x $y $p]
-	incr i
-	if {[expr {$i % $ndim2}] == 0} {puts -nonewline "\n"}
+        incr i
+        if {[expr {$i % $ndim2}] == 0} {puts -nonewline "\n"}
     }
 
     return -code ok
 }
 
-if {1} {
-    lassign $argv fname along offset
-    read_dx $fname dx
-    ex_dx dx $along $offset
+## Extract 1D plot from dx datax
+proc ex_dx_1D {data {along X} {offset_dim1 0.5} {offset_dim2 0.5}} {
+
+    upvar $data dx_data
+
+    ## Make sure offsets along dim1 and 2 are [0,1]
+    if {[expr {$offset_dim1 > 1 || $offset_dim1 < 0\
+                   || $offset_dim2 > 1 || $offset_dim2 < 0 }]} {
+        return -code error
+    }
+
+    ## Create temporary references to data
+    ## e.g. upvar 0 dx_data(nx) nx
+    foreach x [array names dx_data *] {
+        upvar 0 dx_data($x) $x
+    }
+
+    set pot {}
+    set grid {}
+    switch -exact $along {
+
+        x -
+        X {
+            set iso1 [expr {int($nz * $offset_dim1)}]
+            set iso2 [expr {int($ny * $offset_dim2)}]
+
+            set off1 [expr {$iso1 * $nx * $ny}]
+            set off2 [expr {$iso2 * $nx}]
+
+            for {set j 0} {$j < $nx} {incr j} {
+                lappend pot [lindex $u [expr {$off1 + $off2 + $j}]]
+                lappend grid [expr {$xmin + $j * $hx}]
+            }
+        }
+
+        y -
+        Y {
+            set iso1 [expr {int($nx * $offset_dim1)}]
+            set iso2 [expr {int($nz * $offset_dim2)}]
+
+            set off [expr {$iso2 * $nx * $ny}]
+            for {set j 0} {$j < $ny} {incr j} {
+                lappend pot [lindex $u [expr {$off + $j * $nx + $iso1}]]
+                lappend grid [expr {$ymin + $j * $hy}]
+            }
+
+        }
+
+        z -
+        Z {
+            set iso1 [expr {int($nx * $offset_dim1)}]
+            set iso2 [expr {int($ny * $offset_dim2)}]
+
+            for {set i 0} {$i < $nz} {incr i} {
+                set off [expr {$i * $nx * $ny}]
+                lappend pot [lindex $u [expr {$off + $iso2 + $iso1}]]
+                lappend grid [expr {$zmin + $i * $hz}]
+            }
+        }
+
+        default {puts "unknown option $along"; return -code error }
+    }
+
+    ## Output into something gnuplot understands
+    foreach p $pot x $grid {
+        puts [format " %10.4g %10.4g" $x $p]
+    }
+
+    return -code ok
+}
+
+
+## Only run from command line
+if {![info exists env(VMDTITLE)]} {
+
+    ## Testing - Contours
+    if {1} {
+        lassign $argv fname along offset
+        read_dx $fname dx
+        ex_dx dx $along $offset
+    }
+
+    ## Testing - 1D
+    if {0} {
+        lassign $argv fname along offset1 offset2
+        read_dx $fname dx
+        ex_dx_1D dx $along $offset1 $offset2
+    }
+
+    ## Average along a slice
 }
