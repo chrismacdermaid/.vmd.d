@@ -1,0 +1,771 @@
+# -*- tcl -*-
+############################################################################
+#cr
+#cr            (C) Copyright 1995 The Board of Trustees of the
+#cr                        University of Illinois
+#cr                         All Rights Reserved
+#cr
+############################################################################
+
+############################################################################
+# RCS INFORMATION:
+#
+#       $RCSfile: .vmdrc,v $
+#       $Author: johns $        $Locker:  $                $State: Exp $
+#       $Revision: 1.5 $      $Date: 2000/05/23 16:00:17 $
+#
+############################################################################
+# DESCRIPTION:
+#
+# VMD startup script.  The commands here are executed as soon as VMD starts up
+############################################################################
+# Modified by Andriy Anishkin (anishkin@icqmail.com) UMCP
+# Found online here: http://www.life.umd.edu/biology/sukharevlab/download/vmd_scripts/vmd.rc
+
+#Modified by Chris MacDermaid (chris.macdermaid@gmail.com) UPENN Aug 2008.
+
+# turn on lights 0 and 1
+light 0 on
+light 1 on
+light 2 off
+light 3 off
+display nearclip set 0
+
+# position the stage and axes
+#axes location lowerleft
+axes location off
+stage location off
+
+# position and turn on menus
+menu main     move 1681 512
+menu animate  move 125  30
+menu edit     move 125  225
+menu tracker  move 125  520
+menu display  move 395  30
+menu graphics move 2625 512
+menu color    move 125  225
+menu files    move 2150 512
+menu molecule move 0    512
+menu labels   move 661  29
+menu render   move 125  525
+menu sequence move 629  0
+
+# # position and turn on menus
+# menu main     move 7   785
+# menu animate  move 125 30
+# menu edit     move 125 225
+# menu tracker  move 125 520
+# menu display  move 395 30
+# menu graphics move 912 332
+# menu color    move 125 225
+# menu files    move 825 502
+# menu molecule move 125 525
+# menu labels   move 912 29
+# menu render   move 125 525
+# menu sequence move 881 0
+
+menu main     on
+#menu animate  on
+#menu edit     on
+#menu tracker  on
+#menu display  on
+menu graphics on
+#menu color    on
+#menu labels   on
+#menu renderer on
+#menu molecule on
+menu files    on
+
+after idle {
+
+    if {![info exists env(VMDTEXT)]} {
+        menu tkcon on
+        menu tkcon move 2350 250
+    }
+
+    vmdrestoremycolors
+
+    ## Load scripts in vmd.d
+    foreach f [glob -directory $env(HOME)/.vmd.d *.tcl] {
+        puts "Loading file $f"
+        source $f
+    }
+
+    ## Colorscale
+    setcolors vmd_0.75 ;#Drop the saturation of the default colors
+    setcolorscale jet  ;#Set the colorscale to Matlab's jet
+
+    color Name C green
+    color Type C green
+    color change rgb 0 0.1 0.2 0.7 ;# blue
+    color change rgb 1 0.7 0.2 0.1 ;# red
+    color change rgb 3 0.7 0.4 0.0 ;# orange
+    color change rgb 4 0.8 0.7 0.1 ;# yellow
+    color change rgb 7 0.1 0.7 0.2 ;# green
+}
+
+display projection orthographic
+catch {package require topotools}
+
+# +-------------------------+
+# | Autoload custom plugins |
+# +-------------------------+
+set auto_path [linsert $auto_path 0 [file join $env(HOME) .vmdplugins]]
+
+## Set a standard property lookup variable for atomselect
+set proplist {name type mass charge radius element resname resid chain segname}
+
+proc h { } {
+    # Prints help for keyboard shortcuts to the screen
+    puts "
+______________________ Hot Keys (for OpenGL Window): ______________________
+
+___ Mouse mode ___
+R   enter rotate mode; stop rotation
+T   enter translate mode
+S   enter scaling mode
+C   assign rotation center
+0   query item; show labels menu
+1   pick atom
+2   pick bond (2 atoms)
+3   pick angle (3 atoms)
+4   pick dihedral (4 atoms)
+5   move atom
+6   move residue
+7   move fragment
+8   move molecule
+9   move highlighted rep
+
+
+___ View ___
+Q   view from positive direction of x axis
+W   view from positive direction of y axis
+E   view from positive direction of z axis
+F   flip view 180o (view from the back of the current view)
+X   spin about x axis
+Y   spin about y axis
+Z   spin about z axis
+J   rotate 2o about x
+K   rotate -2o about x
+L   rotate 2o about y
+H   rotate -2o about y
+
+
+___ Representations ___
+N   apply preselected graphical representation (new ribbons colored by chain)
+I   apply preselected graphical representation (trace colored by index)
+V   set white background and 'exp2' depth cue
+B   set black background without depthcue
+P   switch depthcue on and off
+U   make the selections of the top molecule to auto update each frame
+A   apply representations from the top molecule to all other molecules
+
+___ Additional graphics ___
+O (o)   draw coordinate cylinders in origin (red x, green y, blue z)
+G   draw coordinate greed (red x, green y, blue z). One tick 1A, small
+square 5A, big square 10A.
+D   remove all the graphics added
+
+
+___ Menus ___
+\[  show main menu
+\]  show files menu, and set the current folder as of the top molecule file
+'   show graphics (Graphical Representations) menu
+\\  show sequence menu
+\;  show tkcon Tcl console (Works after the first use of Extensions -> tkcon)
+
+
+___ Animation ___
++   move to next frame
+-   move to previous frame
+. > play animation forward
+, < play animation reverse
+/ ? stop animation
+
+
+___ Modifications ___
+i   move geometry center of the molecule to the origin
+
+______________________ Text Commands (for the console): ______________________
+h   Show this list of Hot keys and Text commands
+a   Loads coordinates from the filelist and adds them as new frames to the top molecule
+Syntax: a {file1.coor file2.pdb file3.dcd}; a {c:/temp} {file1.dcd} 10
+Filenames can be separated by new lines. First argument can be path to files, it can be
+omitted or empty. The third argument can be step for trajectory reading or can be omitted.
+Filename can include full path.
+n   Loads coordinates from the filelist and adds them as new files.
+Syntax: n {file1.coor file2.pdb file3.dcd}; n {c:/temp} {file1.dcd} 10
+Filenames can be separated by new lines. First argument can be path to files, it can be
+omitted or empty. The third argument can be step for trajectory reading or can be omitted.
+c   sets current working folder to the path to the first loaded file of the top molecule
+pdb Write current frame of the top file to a pdb file <old_name>_.pdb
+fx  Rotate (flip) protein 180 degrees around x axis (changes coordinates)
+fy  Rotate (flip) protein 180 degrees around y axis (changes coordinates)
+fz  Rotate (flip) protein 180 degrees around z axis (changes coordinates)
+betascale   Sets beta value of protein residues to the value found in the
+selected hydrophobicity scale.
+Usage: 'betascale' - prints the list of
+scales; 'betascale <scale_name>' - assigns values from the scale ;
+'betascale <scale_name> scale' -  assigns values from the scale and
+prints scale values on the console screen
+bs  Same as 'betascale'
+
+}
+
+user add key {O} {
+    #Reset Display
+    display projection orthographic
+}
+
+user add key {P} {
+    #Reset Display
+    display projection perspective
+}
+
+user add key {*} {
+    #Reset Display
+    display resetview
+}
+
+user add key {=} {
+    #goes to the next animation frame
+    animate next
+}
+
+user add key f {
+    #Flips  -  Rotates scene 180 degrees aroynd Y (vertical on screen) axis
+    rotate y by 180
+}
+
+
+user add key q {
+    #Rotates scene to make a view from X axis, z is up
+    mouse stoprotation
+    rotate x to -90
+    rotate y by -90
+}
+
+user add key w {
+    #Rotates scene to make a view from Y axis, z is up
+    mouse stoprotation
+    rotate z to 180
+    rotate x by -90
+}
+
+user add key e {
+    #Rotates scene to make a view from Z axis, x is to the left
+    mouse stoprotation
+    rotate z to 180
+}
+
+user add key o {
+    #draws coordinate cylinders in origin
+    draw color red
+    draw cylinder {-100 0 0} {100 0 0} radius 0.5
+    draw cone {2 0 0} {5 0 0} radius 1 resolution 12
+    draw color green
+    draw cylinder {0 -100 0} {0 100 0} radius 0.5
+    draw cone {0 2 0} {0 5 0} radius 1 resolution 12
+    draw color blue
+    draw cylinder {0 0 -100} {0 0 100} radius 0.5
+    draw cone {0 0 2} {0 0 5} radius 1 resolution 12
+
+}
+
+user add key d {
+    #removes all the graphics added
+    draw delete all
+}
+
+user add key g {
+    draw color red
+    draw cylinder {-100 0 0} {100 0 0} radius 0.5
+    draw cone {2 0 0} {5 0 0} radius 1 resolution 12
+    draw color green
+    draw cylinder {0 -100 0} {0 100 0} radius 0.5
+    draw cone {0 2 0} {0 5 0} radius 1 resolution 12
+    draw color blue
+    draw cylinder {0 0 -100} {0 0 100} radius 0.5
+    draw cone {0 0 2} {0 0 5} radius 1 resolution 12
+
+    for {set i -100} {$i <= 100} {incr i} {
+        draw color red
+        set v1 "-1 $i 0"
+        set v2 "1 $i 0"
+        set v3 "-1 0 $i"
+        set v4 "1 0 $i"
+        draw cylinder $v1 $v2 radius 0.05
+        draw cylinder $v3 $v4 radius 0.05
+        draw color green
+        set v1 "0 -1 $i"
+        set v2 "0 1 $i"
+        set v3 "$i -1 0"
+        set v4 "$i 1 0"
+        draw cylinder $v1 $v2 radius 0.05
+        draw cylinder $v3 $v4 radius 0.05
+        draw color blue
+        set v1 "$i 0 -1"
+        set v2 "$i 0 1"
+        set v3 "0 $i -1"
+        set v4 "0 $i 1"
+        draw cylinder $v1 $v2 radius 0.05
+        draw cylinder $v3 $v4 radius 0.05
+    }
+
+    for {set i -20} {$i <= 20} {incr i} {
+        draw color red
+        set v1 "-100 [expr ($i*5)] 0"
+        set v2 "100 [expr ($i*5)] 0"
+        set v3 "-100 0 [expr ($i*5)]"
+        set v4 "100 0 [expr ($i*5)]"
+        draw cylinder $v1 $v2 radius 0.1
+        draw cylinder $v3 $v4 radius 0.1
+        draw color green
+        set v1 "0 -100 [expr ($i*5)]"
+        set v2 "0 100 [expr ($i*5)]"
+        set v3 "[expr ($i*5)] -100 0"
+        set v4 "[expr ($i*5)] 100 0"
+        draw cylinder $v3 $v4 radius 0.1
+        draw cylinder $v1 $v2 radius 0.1
+        draw color blue
+        set v1 "[expr ($i*5)] 0 -100"
+        set v2 "[expr ($i*5)] 0 100"
+        set v3 "0 [expr ($i*5)] -100"
+        set v4 "0 [expr ($i*5)] 100"
+        draw cylinder $v3 $v4 radius 0.1
+        draw cylinder $v1 $v2 radius 0.1
+    }
+
+    for {set i -10} {$i <= 10} {incr i} {
+        draw color red
+        set v1 "-100 [expr ($i*10)] 0"
+        set v2 "100 [expr ($i*10)] 0"
+        set v3 "-100 0 [expr ($i*10)]"
+        set v4 "100 0 [expr ($i*10)]"
+        draw cylinder $v1 $v2 radius 0.2
+        draw cylinder $v3 $v4 radius 0.2
+        draw color green
+        set v1 "0 -100 [expr ($i*10)]"
+        set v2 "0 100 [expr ($i*10)]"
+        set v3 "[expr ($i*10)] -100 0"
+        set v4 "[expr ($i*10)] 100 0"
+        draw cylinder $v1 $v2 radius 0.2
+        draw cylinder $v3 $v4 radius 0.2
+        draw color blue
+        set v1 "[expr ($i*10)] 0 -100"
+        set v2 "[expr ($i*10)] 0 100"
+        set v3 "0 [expr ($i*10)] -100"
+        set v4 "0 [expr ($i*10)] 100"
+        draw cylinder $v3 $v4 radius 0.2
+        draw cylinder $v1 $v2 radius 0.2
+    }
+}
+
+
+
+
+user add key i {
+    #Moves geometry center of the molecule to the origin
+    set sel999 [atomselect top all]
+    $sel999 moveby [vecscale -1.0 [measure center $sel999]]
+    $sel999 delete
+}
+
+
+# +-----------------+
+# | REPRESENTATIONS |
+# +-----------------+
+
+
+#Apply preselected graphical representation
+
+set numreps 0
+set selrep 0
+set repstat 0
+set numreptype 6
+
+proc changerep {repstat} {
+    global numreps selrep
+
+    #   mol delrep $numreps top
+
+    switch $repstat {
+        0 {
+            mol modstyle $selrep top Licorice 0.2 10 10
+            mol modcolor $selrep top Name
+
+        }
+        1 {
+            mol modstyle $selrep top NewRibbons 1.800000 6.000000 2.600000 0
+            mol modcolor $selrep top Chain
+        }
+        2 {
+            mol modstyle $selrep top Licorice 0.2 10 10
+            mol modcolor $selrep top ResType
+        }
+        3 {
+            mol modstyle $selrep top Trace 0.500000 6.000000
+            mol modcolor $selrep top Index
+        }
+        4 {
+            mol modstyle $selrep top vdw
+            mol modcolor $selrep top ResType
+        }
+        5 {
+            mol modstyle $selrep top lines
+            mol modcolor $selrep top Name
+        }
+        6 {
+            mol modstyle $selrep top QuickSurf
+            mol modcolor $selrep top Name
+        }
+        7 {
+        }
+        default {
+            mol modstyle $selrep top lines
+            mol modcolor $selrep top Name
+        }
+    }
+
+    if {$numreps < 0} {set numreps 0}
+}
+
+
+# m/M are toggles m --> New Rep, M --> del Rep
+
+user add key m {
+
+    mol addrep top
+    incr numreps
+
+    if {$numreps > 0} { incr selrep }
+}
+
+user add key M {
+
+    mol delrep $selrep top
+    if {$numreps > -1} {
+        set numreps [expr {$numreps - 1}]
+        if {$selrep > 0} { set selrep [ expr {$selrep - 1} ] }
+    }
+}
+
+# n/N are toggles N --> Next Rep, n --> Prev Rep
+
+user add key n {
+    if {$repstat <= 0} {
+        set repstat $numreptype
+    } else {
+        set repstat [ expr {$repstat - 1} ]
+    }
+
+    changerep $repstat
+}
+
+user add key N {
+    if {$repstat >= $numreptype} {
+        set repstat 0
+    } else {
+        incr repstat
+    }
+
+    changerep $repstat
+}
+
+## Cycle Active Representations
+
+user add key b {
+    if {$selrep < $numreps} {
+        incr selrep
+    } else {
+        set selrep 0
+    }
+    puts "Selection: $selrep"
+}
+
+user add key B {
+    if {$selrep > 0} {
+        set selrep [ expr {$selrep - 1} ]
+    } elseif {$numreps <= 0} {
+        set selrep 0
+    } else {
+        set selrep $numreps
+    }
+    puts "Selection: $selrep"
+}
+
+user add key 0 {
+    mouse mode 4 0
+    menu labels on
+}
+
+
+user add key v {
+    #sets white background and exp2 depth cue
+    color Display {Background} white
+
+    display depthcue   on
+    display cuestart   0.500000
+    display cueend     10.000000
+    display cuedensity 0.400000
+    display cuemode    Exp2
+}
+
+user add key V {
+    #sets black background without depthcue
+    color Display {Background} black
+
+    display depthcue   off
+}
+
+user add key p {
+    #switches depthcue on and off
+    if {[string compare [display get depthcue] on] == 0} {
+        #Switch depthcue off
+        display depthcue off
+    } {
+        #Switch depthcue on
+        display depthcue   on
+        #       display cuestart   0.500000
+        #       display cueend     10.000000
+        #       display cuedensity 0.400000
+        #       display cuemode    Exp2
+    }
+
+}
+
+
+user add key u {
+    #makes the selections of the top molecule to auto update each frame
+    set n [molinfo top get numreps]
+    for {set i 0} {$i < $n} {incr i} {
+        mol selupdate $i top on
+    }
+}
+
+
+## Copy top molecule using topotools
+if {[namespace exists TopoTools]} {
+    user add key c {
+
+        set mol [molinfo top]
+
+        ## Save represenations and viewpoints
+        save_rep 99999
+        save_viewpoint 99999 $mol
+
+        ## Copy the molecule
+        set newmol [::TopoTools::mergemols $mol]
+
+        restore_rep 99999 0 $newmol
+        cpy_viewpoint 99999 $mol $newmol
+
+    }
+}
+
+
+
+## Apply representation of top mol to all mols
+user add key a {
+    #cpymolrep [molinfo list]
+    save_rep 99999 [molinfo top]
+    restore_rep 99999 0
+}
+
+user add key {;} {
+    #Calls tkcon console window to the top (after it was once started from the VMD menu)
+    tkcon show
+}
+
+user add key {'} {
+    menu graphics on
+}
+
+user add key {[} {
+    menu main on
+}
+
+    user add key {]} {
+        #Preocedure sets current working folder to the path to the last loaded file of the top molecule
+        lassign {*}[molinfo top get filename] psf pdb
+        puts $psf
+        catch {cd [file dirname $psf]}
+        pwd
+        menu files on
+    }
+
+
+user add key "\\" {
+    menu sequence on
+}
+
+user add key {r} {
+    mouse stoprotation
+    mouse mode 0 0
+}
+
+proc write_vector { vec filename } {
+    set fid [open $filename w]
+    foreach elem $vec { puts $fid $elem }
+    close $fid
+}
+
+
+proc fx { } {
+    # Rotate (flip) protein 180 degrees around x axis
+    set sel [atomselect top all]
+    $sel move [transaxis x 180]
+    $sel delete
+}
+proc fy { } {
+    # Rotate (flip) protein 180 degrees around y axis
+    set sel [atomselect top all]
+    $sel move [transaxis y 180]
+    $sel delete
+}
+proc fz { } {
+    # Rotate (flip) protein 180 degrees around z axis
+    set sel [atomselect top all]
+    $sel move [transaxis z 180]
+    $sel delete
+}
+
+# define a new, very transparent material 'Glass'
+material add Glass
+material change ambient   Glass 0.00
+material change specular  Glass 0.50
+material change diffuse   Glass 0.65
+material change shininess Glass 0.53
+material change opacity   Glass 0.15
+
+
+# define a new, semitransparent strictly white material 'Slice', for making protein crossection pictures
+material add Slice
+material change ambient   Slice 1.00
+material change specular  Slice 0.00
+material change diffuse   Slice 1.00
+material change shininess Slice 0.00
+material change opacity   Slice 0.75
+
+# define a new, non-shiny white material 'Gypsum', for making BW protein pictures
+material add Gypsum
+material change ambient Gypsum 0.000000
+material change specular Gypsum 1.000000
+material change diffuse Gypsum 1.000000
+material change shininess Gypsum 0.000000
+material change opacity Gypsum 1.000000
+
+# define a new, non-shiny gray material 'Smog', for making BW protein crossections
+material add Smog
+material change ambient Smog 0.400000
+material change specular Smog 0.000000
+material change diffuse Smog 0.000000
+material change shininess Smog 0.000000
+material change opacity Smog 1.000000
+
+proc vmdrestoremycolors {} {
+
+    set colorcmds {
+        {color Restype {Solvent} iceblue}
+        {color Restype {Unassigned} green}
+        {color Restype {Nonpolar} yellow}
+    }
+
+    foreach colcmd $colorcmds {
+        set val [catch {eval $colcmd}]
+    }
+}
+
+
+## Rotate molecule to bring bond between id1, id2 along +/- x, y, or z
+proc bondto {axis sel id1 id2} {
+
+    set idx [$sel get index]
+    set xyz [$sel get {x y z}]
+
+    set v {}
+    lappend v [lindex $xyz [lsearch -exact -integer $idx $id1]]
+    lappend v [lindex $xyz [lsearch -exact -integer $idx $id2]]
+
+    #Moves COM of the molecule to the origin
+    $sel moveby [vecscale -1.0 [measure center $sel weight mass]]
+
+    ## Rotate to bring along x
+    set r [vecinvert [vecsub {*}$v]]
+    $sel move [transvecinv $r]
+
+    ## Check for +/- orientation along x
+    set a [vecdot $r {1 0 0}]
+    if {$a < 0.0} {
+        $sel move [transaxis z 180]
+    }
+
+    switch -- $axis {
+        x {}
+        y {$sel move [transaxis z -90 deg]}
+        z {$sel move [transaxis y 90 deg]}
+        -x {$sel move [transaxis z 180 deg]}
+        -y {$sel move [transaxis z 90 deg]}
+        -z {$sel move [transaxis y -90 deg]}
+        default {puts "axis must be x, y or z"}
+    }
+}
+
+# +-------------------+
+# |      Axel's hacks |
+# +-------------------+
+
+if { 1 } {
+    # modified to include VMD Main
+    # define global variable to store X window id.
+    set vmd_opengl_wid -1
+    global vmd_opengl_wid
+    set vmd_main_wid -1
+    global vmd_main_wid
+
+    # callback function to be called when the top molecule changes
+    proc vmd_change_window_name {args} {
+        global vmd_main_wid
+        global vmd_opengl_wid
+        if {[molinfo num] < 1} return
+
+        if {[llength $args] == 0} {
+            set name [join [molinfo top get name]]
+        } else {
+            set name [lindex $args 0]
+            if { [string equal $name vmd_molecule] } {
+                set name [join [molinfo top get name]]
+            }
+        }
+        if {$vmd_opengl_wid > 0} {
+            catch {exec xprop -id $vmd_opengl_wid \
+                       -set WM_NAME "VMD: $name"}
+            catch {exec xprop -id $vmd_opengl_wid \
+                       -set WM_ICON_NAME $name}
+        }
+        if {$vmd_main_wid > 0} {
+            catch {exec xprop -id $vmd_main_wid \
+                       -set WM_NAME "VMD Main: $name"}
+            catch {exec xprop -id $vmd_main_wid \
+                       -set WM_ICON_NAME $name}
+        }
+    }
+
+    # activate callback
+    trace variable vmd_molecule w vmd_change_window_name
+
+    # record window id for automatic title change
+    after idle {
+        global vmd_opengl_wid
+        if {![catch {exec xwininfo -name \
+                         "VMD [vmdinfo version] OpenGL Display"} val ]} {
+            set vmd_opengl_wid [lindex $val 3]
+        }
+        if {![catch {exec xwininfo -name \
+                         "VMD Main"} val ]} {
+            set vmd_main_wid [lindex $val 3]
+        }
+        vmd_change_window_name
+    }
+
+}
