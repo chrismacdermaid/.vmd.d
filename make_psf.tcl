@@ -28,7 +28,7 @@ proc make_psf {mol {topologies def}} {
     ## Identify molecules with the same resnames, do waters
     ## separately since we need a lot of them per segment
 
-    set sel [atomselect $mol "not water or protein"]
+    set sel [atomselect $mol "not (water or protein)"]
     set resnames [lsort -unique -ascii [$sel get resname]]
 
     set fragsperseg_list {}
@@ -53,6 +53,7 @@ proc make_psf {mol {topologies def}} {
 
     ## Unique segment identifier per-residue name
     set segidx 0
+    set segidx2 0
 
     foreach rn $resnames fragperseg $fragsperseg_list opt $opt_list {
 
