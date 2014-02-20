@@ -1,5 +1,6 @@
 ## Make a psf file from a molid.Try to be intellegent
-## about the fragments, segments etc..
+## about the fragments, segments etc.. No guarantees!
+## check it when it's done.
 proc make_psf {mol {topologies def}} {
 
     global env
@@ -27,14 +28,14 @@ proc make_psf {mol {topologies def}} {
     ## Identify molecules with the same resnames, do waters
     ## separately since we need a lot of them per segment
 
-    set sel [atomselect $mol "not water"]
+    set sel [atomselect $mol "not water or protein"]
     set resnames [lsort -unique -ascii [$sel get resname]]
 
     set fragsperseg_list {}
     set opt_list {}
     if {[$sel num] > 0} {
-	set fragsperseg_list [lrepeat [llength $resnames] 2000]
-	set opt_list [lrepeat [llength $resnames] ""]
+        set fragsperseg_list [lrepeat [llength $resnames] 2000]
+        set opt_list [lrepeat [llength $resnames] ""]
     }
 
     $sel delete
@@ -129,6 +130,41 @@ proc make_psf {mol {topologies def}} {
         incr segidx
     }
 
+    set sel [atomselect $mol "protein"]
+    set protein_fragments [lsort -unique -integer -increasing [$sel get fragment]]
+    $sel delete
+
+    ## Each protein gets its own segment
+    if {[llength $protein_fragments] > 0} {
+        foreach fragment $protein_fragments {
+
+            #Set the segment name to residue_seg_idx + seg_index
+            set segname "$segidx$segidx2"
+
+            set outname [format "%s_%s.pdb" $segname $fragment]
+            set sel [atomselect $mol "fragment $subfragments"]
+
+            ## Writeout the PDB for the collection of fragments
+            $sel set segname $segname
+            $sel writepdb $outname
+            $sel delete
+
+            ## Read pdb
+            pdb $outname
+
+            first NTER
+            last CTER
+
+            coordpdb $outname $segname
+
+            ## delete the file since we don't need it anymore
+            file delete -force $outname
+
+            incr segidx2
+        }
+    }
+
+    ## Guess missing coordinates
     guesscoord
 
     lassign [molinfo $mol get name] pdb
