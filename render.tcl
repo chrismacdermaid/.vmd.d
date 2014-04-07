@@ -1,12 +1,14 @@
 ## Renders some frames
 
-proc myrender {molid filename} {
+proc myrender {molid filename {start 0} {stop end} {stride 1}} {
 
-    set n [molinfo $molid get numframes]
+    if {$stop == "end"} {
+      set stop [molinfo $molid get numframes]
+    }
 
-    for {set i 0} {$i < $n} {incr i} {
+    for {set i $start;set j 0} {$i < $stop} {incr i $stride; incr j} {
         molinfo $molid set frame $i
-        render TachyonInternal [format "%s.%04d.tga" $filename $i]
+        render TachyonInternal [format "%s.%04d.tga" $filename $j]
     }
 
 }
