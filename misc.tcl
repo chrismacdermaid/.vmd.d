@@ -11,3 +11,10 @@ proc nres {sel} {return [llength [lsort -unique [$sel get residue]]]}
 
 ## Run scripts silently.
 proc source_silent {args} {foreach f $args {source $f}}
+
+proc setbox {{molid top}} {
+    set sel [atomselect $molid "all"]
+    set box [vecinvert [vecsub {*}[measure minmax $sel -withradii]]]
+    molinfo $molid set {a b c} $box
+    $sel delete
+}
