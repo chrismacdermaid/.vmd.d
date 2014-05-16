@@ -18,3 +18,12 @@ proc setbox {{molid top}} {
     molinfo $molid set {a b c} $box
     $sel delete
 }
+
+proc writebox {fname {molid top} {guess 0}} {
+    if {![catch {package present "pbctools"}]} {
+        package require pbctools
+    }
+
+    if {$guess} {setbox $molid}
+    pbc writexst $fname
+}
