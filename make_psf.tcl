@@ -1,7 +1,7 @@
 ## Make a psf file from a molid.Try to be intellegent
 ## about the fragments, segments etc.. No guarantees!
 ## check it when it's done.
-proc make_psf {mollist {topologies def}} {
+proc make_psf {mollist {topologies def} {suffix clock}} {
 
     global env
 
@@ -159,8 +159,14 @@ proc make_psf {mollist {topologies def}} {
                     ## Read pdb
                     pdb $outname
 
-                    first NTER
-                    last CTER
+                    if {0} {
+                        first NTER
+                        last CTER
+                    } else { ;#Acelyated N terminus, amidated c terminus
+                        first ACE
+                        last CT2
+                    }
+
                 }
                 coordpdb $outname $segname
 
@@ -182,15 +188,19 @@ proc make_psf {mollist {topologies def}} {
     }
 
     set fname [join $names "-"]
-    set seconds [clock seconds]
-    set psf $fname\_$seconds\.psf
-    set pdb $fname\_$seconds\.pdb
+    if {$suffix == "clock"} { 
+     set suffix [clock seconds]
+    }
+   
+    set psf $fname\_$suffix\.psf
+    set pdb $fname\_$suffix\.pdb
 
     writepsf $psf
     writepdb $pdb
 
     if {[catch {mol new $psf type psf waitfor all} newmol]} {
         vmdcon -err "Unable to load file $psf: $newmol"
+        return
     }
     mol addfile $pdb type pdb waitfor all molid $newmol
 
