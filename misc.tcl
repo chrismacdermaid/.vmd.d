@@ -20,7 +20,7 @@ proc setbox {{molid top}} {
 }
 
 proc writebox {fname {molid top} {guess 0}} {
-    if {![catch {package present "pbctools"}]} {
+    if {[catch {package present "pbctools"}]} {
         package require pbctools
     }
 
