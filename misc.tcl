@@ -19,6 +19,7 @@ proc setbox {{molid top}} {
     $sel delete
 }
 
+## Write out a xsc/xst, guess box dims if necessary
 proc writebox {fname {molid top} {guess 0}} {
     if {[catch {package present "pbctools"}]} {
         package require pbctools
@@ -27,3 +28,11 @@ proc writebox {fname {molid top} {guess 0}} {
     if {$guess} {setbox $molid}
     pbc writexst $fname
 }
+
+
+## Alias atomselect. I'm so tired of typing "atomselect"
+proc as_alias {} {
+    interp alias {} as {} atomselect
+    interp alias {} ast {} atomselect top
+    interp alias {} asa {} atomselect top all
+}; as_alias
