@@ -189,11 +189,14 @@ proc make_psf {mollist {topologies def} {suffix clock}} {
 
     set fname [join $names "-"]
     if {$suffix == "clock"} { 
-     set suffix [clock seconds]
+     set suffix "_[clock seconds]"
     }
    
-    set psf $fname\_$suffix\.psf
-    set pdb $fname\_$suffix\.pdb
+    #set psf $fname$suffix\.psf
+    #set pdb $fname$suffix\.pdb
+   
+    set psf $suffix\.psf
+    set pdb $suffix\.pdb
 
     writepsf $psf
     writepdb $pdb
