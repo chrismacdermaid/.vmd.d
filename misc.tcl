@@ -30,6 +30,16 @@ proc writebox {fname {molid top} {guess 0}} {
     pbc writexst $fname -molid $molid -now
 }
 
+proc boxby2 {{molid top} {guess 0}} {
+    if {[catch {package present "pbctools"}]} {
+        package require pbctools
+    }
+
+    if {$guess} {setbox $molid}
+
+    return [vecscale [molinfo top get {a b c}] 0.5]
+}
+
 ## Alias atomselect. I'm so tired of typing "atomselect"
 proc as_alias {} {
     interp alias {} as {} atomselect
