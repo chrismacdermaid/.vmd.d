@@ -67,7 +67,7 @@ proc read_dx {fname data} {
                 continue
             }
 
-            {[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$} {
+            {[-+]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][-+]?[0-9]+)?} {
                 ## Look for lines starting with some floatingpoints
                 scan $line "%e %e %e" u1 u2 u3
                 lappend temp $u1 $u2 $u3
@@ -96,7 +96,8 @@ proc read_dx {fname data} {
         for {set j 0} {$j < $ny} {incr j} {
             for {set i 0} {$i < $nx} {incr i} {
                 set idx [expr {$i * $nyz + $j * $nz + $k}]
-                lappend dx_data(u) [expr {[lindex $temp $idx] * 0.0256}]
+                #lappend dx_data(u) [expr {[lindex $temp $idx] * 0.0256}]
+                lappend dx_data(u) [lindex $temp $idx]
             }
         }
     }
@@ -108,13 +109,151 @@ proc read_dx {fname data} {
     return -code ok
 }
 
-## Extract 2D contour from dx dataset
-proc ex_dx {data {along X} {slice_offset 0.5}} {
+## Average along a 2D contour
+proc ex_dx_avg {data {along X} {fname stdout}} {
+
+    if {[catch {load $::env(HOME)/pkg/lib/libtm.so} msg]} {
+        puts "error: can't load libtm library: $msg"
+        return 0
+    }
+
+    upvar $data dx_data
+
+    set fid "stdout"
+    if {$fname != "stdout"} {
+        if {[catch {open $fname w} fid]} {
+            puts "Unable to open $fname for writing"
+            return 0
+        }
+    }
+
+    ## Create temporary references to data
+    ## e.g. upvar 0 dx_data(nx) nx
+    foreach x [array names dx_data *] {
+        upvar 0 dx_data($x) $x
+    }
+
+    switch -exact $along {
+
+        x -
+        X {
+            set pot {}; set grid {}
+            set ndim1 $nz; set ndim2 $ny
+
+            ## Grid
+            for {set i 0} {$i < $nz} {incr i} {
+                set off [expr {$i * $nx * $ny}]
+                for {set j 0} {$j < $ny} {incr j} {
+                    lappend grid [expr {$ymin + $j * $hy}] [expr {$zmin + $i * $hz}]
+                }
+            }
+
+            ## Average over dimension
+            for {set k 0} {$k < $nx} {incr k} {
+                set temp {}
+                for {set i 0} {$i < $nz} {incr i} {
+                    set off [expr {$i * $nx * $ny}]
+                    for {set j 0} {$j < $ny} {incr j} {
+                        lappend temp [lindex $u [expr {$off + $j * $nx + $k}]]
+                    }
+                }
+                lappend pot $temp
+            }
+
+            set pot_avg [vecadd {*}$pot]
+            set pot_avg [vecscale [expr {1.0 / $nx}] $pot_avg]
+        }
+
+        y -
+        Y {
+            set pot {}; set grid {}
+            set ndim1 $nz; set ndim2 $nx
+
+            ## Grid
+            for {set i 0} {$i < $nz} {incr i} {
+                set off [expr {$i * $nx * $ny}]
+                for {set j 0} {$j < $nx} {incr j} {
+                    lappend grid [expr {$xmin + $j * $hx}] [expr {$zmin + $i * $hz}]
+                }
+            }
+
+            ## Average over dimension
+            for {set k 0} {$k < $ny} {incr k} {
+                set temp {}
+                set offset [expr {$k * $nx}]
+                for {set i 0} {$i < $nz} {incr i} {
+                    set off [expr {$i * $nx * $ny}]
+                    for {set j 0} {$j < $nx} {incr j} {
+                        lappend temp [lindex $u [expr {$offset + $off + $j}]]
+                    }
+                }
+                lappend pot $temp
+            }
+            set pot_avg [vecadd {*}$pot]
+            set pot_avg [vecscale [expr {1.0 / $ny}] $pot_avg]
+        }
+
+        z -
+        Z {
+            set pot {}; set grid {}
+            set ndim1 $ny; set ndim2 $nx
+
+            ## Grid
+            for {set i 0} {$i < $ny} {incr i} {
+                set off [expr {$i * $nx}]
+                for {set j 0} {$j < $nx} {incr j} {
+                    lappend grid [expr {$xmin + $j * $hx}] [expr {$ymin + $i * $hy}]
+                }
+            }
+
+            ## Average over dimension
+            for {set k 0} {$k < $nz} {incr k} {
+                set offset [expr {$k * $nx * $ny}]
+                set temp {}
+                for {set i 0} {$i < $ny} {incr i} {
+                    set off [expr {$i * $nx}]
+                    for {set j 0} {$j < $nx} {incr j} {
+                        lappend temp [lindex $u [expr {$offset + $off + $j}]]
+                    }
+                }
+                lappend pot $temp
+            }
+            set pot_avg [vecadd {*}$pot]
+            set pot_avg [vecscale [expr {1.0 / $nz}] $pot_avg]
+        }
+
+        default {puts "unknown option $along"; return -code error }
+    }
+
+    ## Output into something gnuplot understands
+    set i 0
+    foreach p $pot_avg {x y} $grid {
+        puts $fid [format "%10.4g %10.4g %10.4g" $x $y $p]
+        incr i
+        if {[expr {$i % $ndim2}] == 0} {puts -nonewline $fid "\n"}
+    }
+
+    if {$fname != "stdout"} {close $fid}
+
+    return -code ok
+}
+
+
+## Extract 2D contour from dx dataset for a particular slice
+proc ex_dx {data {along X} {fname stdout} {slice_offset 0.5}} {
 
     upvar $data dx_data
 
     if {[expr {$slice_offset > 1 || $slice_offset < 0}]} {
         return -code error
+    }
+
+    set fid "stdout"
+    if {$fname != "stdout"} {
+        if {[catch {open $fname w} fid]} {
+            puts "Unable to open $fname for writing"
+            return 0
+        }
     }
 
     ## Create temporary references to data
@@ -177,10 +316,12 @@ proc ex_dx {data {along X} {slice_offset 0.5}} {
     ## Output into something gnuplot understands
     set i 0
     foreach p $pot {x y} $grid {
-        puts [format "%10.4g %10.4g %10.4g" $x $y $p]
+        puts $fid [format "%10.4g %10.4g %10.4g" $x $y $p]
         incr i
-        if {[expr {$i % $ndim2}] == 0} {puts -nonewline "\n"}
+        if {[expr {$i % $ndim2}] == 0} {puts -nonewline $fid "\n"}
     }
+
+    if {$fname != "stdout"} {close $fid}
 
     return -code ok
 }
@@ -261,7 +402,7 @@ proc ex_dx_1D {data {along X} {offset_dim1 0.5} {offset_dim2 0.5}} {
 if {![info exists env(VMDTITLE)]} {
 
     ## Testing - Contours
-    if {1} {
+    if {0} {
         lassign $argv fname along offset
         read_dx $fname dx
         ex_dx dx $along $offset
