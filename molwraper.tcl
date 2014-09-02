@@ -12,7 +12,8 @@ proc moll { args } {
 
         new {
             set filename [lindex $newargs 0]
-            catch {mol new [file normalize $filename] {*}[lrange $newargs 1 end]} retval
+            catch {mol new [file normalize [glob $filename]]\
+                       {*}[lrange $newargs 1 end]} retval
         }
 
         addfile {
@@ -20,17 +21,20 @@ proc moll { args } {
             lappend newargs waitfor all
 
             set filename [lindex $newargs 0]
-            catch {mol addfile [file normalize $filename] {*}[lrange $newargs 1 end]} retval
+            catch {mol addfile [file normalize [glob $filename]]\
+                       {*}[lrange $newargs 1 end]} retval
         }
 
         -f {
 
             set retval [moll new [lindex $newargs 0]]
 
+            ## Check for wildcards..
             foreach filename [lrange $newargs 1 end] {
-                moll addfile $filename
+                foreach f [striplist [lsort -dictionary [glob $filename]]] {
+                    moll addfile $f
+                }
             }
-
         }
 
         reload {
