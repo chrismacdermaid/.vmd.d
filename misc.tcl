@@ -47,28 +47,62 @@ proc as_alias {} {
     interp alias {} asa {} atomselect top all
 }; as_alias
 
-## calculate COM of sel1 translate $sel2 by inverse of COM 
+## calculate COM of sel1 translate $sel2 by inverse of COM
 proc recenter {sel1 sel2 {first -1} {last -1}} {
 
-    set molid [$sel1 molid]  
+    set molid [$sel1 molid]
     if {$molid != [$sel2 molid]} {
-        vmdcon -err "Selections must share the same molid" 
+        vmdcon -err "Selections must share the same molid"
         return -1
     }
 
     if {$first < 0} {
-      set first [molinfo $molid get frame] 
-    }
-    
-    set n [molinfo $molid get numframes]    
-    if {$last < 0 || $last > $n} {
-      set last [molinfo $molid get frame] 
+        set first [molinfo $molid get frame]
     }
 
-    for {set i $first} {$i <= $last} {incr i} { 
-      molinfo $molid set frame $i
-      $sel1 update; $sel2 update
-      set v [vecinvert [measure center $sel1 weight mass]]
-      $sel2 moveby $v
-  }
+    set n [molinfo $molid get numframes]
+    if {$last < 0 || $last > $n} {
+        set last [molinfo $molid get frame]
+    }
+
+    for {set i $first} {$i <= $last} {incr i} {
+        molinfo $molid set frame $i
+        $sel1 update; $sel2 update
+        set v [vecinvert [measure center $sel1 weight mass]]
+        $sel2 moveby $v
+    }
+}
+
+proc striplist {args} {
+    # Usage:
+    # http://wiki.tcl.tk/3400
+    # striplist ?-level num? list
+    #
+    # Level defaults to 0 if omitted.  This means all levels of list nesting
+    #   are removed by the proc.  For each level requested, a level of list nesting
+    #   is removed.
+    #
+    # determine level
+    set idx [lsearch $args -level]
+    if {$idx == 0} {
+        set level [lindex $args [incr idx]]
+        set args [lreplace $args [expr $idx - 1] $idx]
+    } else {
+        set level 0
+    }
+    # while text seems braced and level is not exhausted
+    while {1} {
+        # strip outer braces and expose inners
+        incr level -1
+        set newargs [join $args]
+        if {$newargs == $args} {
+            break
+        } else {
+            set args $newargs
+        }
+        if {$level == 0} {
+            break
+        }
+    }
+    return $args
 }
