@@ -42,7 +42,7 @@ menu animate  move 125  30
 menu edit     move 125  225
 menu tracker  move 125  520
 menu display  move 395  30
-menu graphics move 2625 512
+menu graphics move 250 512
 menu color    move 125  225
 menu files    move 2150 512
 menu molecule move 0    512
@@ -80,7 +80,7 @@ after idle {
 
     if {![info exists env(VMDTEXT)]} {
         menu tkcon on
-        menu tkcon move 2350 250
+        menu tkcon move 250 250
     }
 
     vmdrestoremycolors
@@ -563,7 +563,15 @@ if {[namespace exists TopoTools]} {
     }
 }
 
+## Apply Viewpoint across mols
+user add key C {
+  set molid [molinfo top]
+  save_viewpoint 99999 $molid 
 
+  foreach mol [molinfo list] {
+    cpy_viewpoint 99999 $molid $mol
+  }
+}
 
 ## Apply representation of top mol to all mols
 user add key a {
