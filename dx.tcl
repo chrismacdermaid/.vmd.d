@@ -399,7 +399,7 @@ proc ex_dx_1D {data {along X} {offset_dim1 0.5} {offset_dim2 0.5}} {
 
 
 ## Only run from command line
-if {![info exists env(VMDTITLE)]} {
+if {![info exists env(VMDDIR)]} {
 
     ## Testing - Contours
     if {0} {
