@@ -163,15 +163,25 @@ proc write_viewpoints {filename} {
     set myfile [open $filename w]
     puts $myfile "\#This file contains viewpoints for a VMD script, view_change.tcl.\n\#Type 'source $filename' from the VMD command window to load these viewpoints.\n"
 
-    foreach mol [molinfo list] {
-        for {set v 0} {$v<=10000} {incr v} {
-            if  [info exists viewpoints($v,$mol,0)] {
-                for {set mat 0} {$mat <= 3} {incr mat} {
-                    puts $myfile "set viewpoints($v,$mol,$mat) { $viewpoints($v,$mol,$mat) }\n "
-                }
-            }
-        }
-    }
+    puts $myfile "array set viewpoints [list [array get viewpoints]]"
+
+    #foreach mol [molinfo list] {
+    #    
+    #    foreach {key value} [array get viewpoints *] {
+    #      puts $key
+    #        lassign [split $key ","] v mol id 
+    #            for {set mat 0} {$mat <= 3} {incr mat} {
+    #                puts $myfile "set viewpoints($v,$mol,$mat) { $viewpoints($v,$mol,$mat) }\n "
+    #            }
+    #          }
+    #    #for {set v 0} {$v<=10000} {incr v} {
+    #    #    if  [info exists viewpoints($v,$mol,0)] {
+    #    #        for {set mat 0} {$mat <= 3} {incr mat} {
+    #    #            puts $myfile "set viewpoints($v,$mol,$mat) { $viewpoints($v,$mol,$mat) }\n "
+    #    #        }
+    #    #    }
+    #    #}
+    #}
     puts $myfile "puts \"\\nLoaded viewpoints file $filename \\n\"\n"
     close $myfile
 }
