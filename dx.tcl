@@ -112,9 +112,12 @@ proc read_dx {fname data} {
 ## Average along a 2D contour
 proc ex_dx_avg {data {along X} {fname stdout}} {
 
-    if {[catch {load $::env(HOME)/pkg/lib/libtm.so} msg]} {
-        puts "error: can't load libtm library: $msg"
-        return 0
+    ## Load the math library if we need it 
+    if {[llength [array names ::env VMD*]] == 0} {
+        if {[catch {load $::env(HOME)/pkg/lib/libtm.so} msg]} {
+            puts "error: can't load libtm library: $msg"
+            return 0
+        }
     }
 
     upvar $data dx_data
