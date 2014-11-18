@@ -188,15 +188,16 @@ proc make_psf {mollist {topologies def} {suffix clock}} {
     }
 
     set fname [join $names "-"]
-    if {$suffix == "clock"} { 
-     set suffix "_[clock seconds]"
+    if {$suffix == "clock"} {
+        set suffix "_[clock seconds]"
     }
-   
+
     #set psf $fname$suffix\.psf
     #set pdb $fname$suffix\.pdb
-   
+
     set psf $suffix\.psf
     set pdb $suffix\.pdb
+    set coor $suffix\.coor
 
     writepsf $psf
     writepdb $pdb
@@ -206,6 +207,8 @@ proc make_psf {mollist {topologies def} {suffix clock}} {
         return
     }
     mol addfile $pdb type pdb waitfor all molid $newmol
+
+    animate write namdbin $coor
 
     return $newmol
 }
@@ -267,6 +270,7 @@ proc make_psf_1res {mol {topologies def}} {
 
     set psf $fname\_$seconds\.psf
     set pdb $fname\_$seconds\.pdb
+    set coor $fname\_$seconds\.coor
 
     writepsf $psf
     writepdb $pdb
@@ -275,6 +279,8 @@ proc make_psf_1res {mol {topologies def}} {
         vmdcon -err "Unable to load file $psf: $newmol"
     }
     mol addfile $pdb type pdb waitfor all molid $newmol
+
+    animate write namdbin $coor
 
     return $newmol
 }
