@@ -563,14 +563,15 @@ if {[namespace exists TopoTools]} {
     }
 }
 
+<<<<<<< HEAD
 ## Apply Viewpoint across mols
 user add key C {
-  set molid [molinfo top]
-  save_viewpoint 99999 $molid 
+    set molid [molinfo top]
+    save_viewpoint 99999 $molid
 
-  foreach mol [molinfo list] {
-    cpy_viewpoint 99999 $molid $mol
-  }
+    foreach mol [molinfo list] {
+        cpy_viewpoint 99999 $molid $mol
+    }
 }
 
 ## Apply representation of top mol to all mols
