@@ -47,6 +47,31 @@ proc as_alias {} {
     interp alias {} asa {} atomselect top all
 }; as_alias
 
+## Return atomselect text for selecting within the specified min/max range
+## aswithin {*}[measure minmax $sel]
+proc aswithin {{min {0.0 0.0 0.0}} {max {0.0 0.0 0.0}} {molid top}} {
+
+    lassign $min xmin ymin zmin
+    lassign $max xmax ymax zmax
+
+    set seltxt {}
+
+    if {$xmin != ""} {lappend seltxt "x >= $xmin"}
+    if {$ymin != ""} {lappend seltxt "y >= $ymin"}
+    if {$zmin != ""} {lappend seltxt "z >= $zmin"}
+    if {$xmax != ""} {lappend seltxt "x <= $xmax"}
+    if {$ymax != ""} {lappend seltxt "y <= $ymax"}
+    if {$zmax != ""} {lappend seltxt "z <= $zmax"}
+    
+    return ([join $seltxt " and "])
+}
+
+## Return atomselect text for selecting withing a spherical cutoff
+proc aswithin_sphere {{center {0.0 0.0 0.0}} {r 1.0} {molid top}} {
+    lassign $center cx cy cz
+    return "((x-$cx)*(x-$cx)+(y-$cy)*(y-$cy)+(z-$cz)*(z-$cz) < $r*$r)"
+}
+
 ## calculate COM of sel1 translate $sel2 by inverse of COM
 proc recenter {sel1 sel2 {first -1} {last -1}} {
 
