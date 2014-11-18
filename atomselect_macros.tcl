@@ -18,6 +18,8 @@ atomselect macro side_noh { side and noh }
 atomselect macro calcium { name "Ca\+" or resname "CA" or resname "CAL" }
 atomselect macro sodium { name "Na\+" or resname "NA" }
 
+atomselect macro sc { resname CLOL CHL1 "CER.*" BENA BENP }
+
 # added Jerome's lipids and cholesterol
 atomselect macro lipid { resname DLPE DMPC GPC LPPC PALM PC PGCL POPC POUC POPE CHL1 CLOL DPPC SAPC }
 atomselect macro lnoh { lipid noh }
