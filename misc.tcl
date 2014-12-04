@@ -131,3 +131,83 @@ proc striplist {args} {
     }
     return $args
 }
+
+## Renumber the residues in a molecule based on fragment
+proc renumber_residues {mol} {
+    
+    set sel [atomselect $mol "all"]
+    set frags [lsort -unique -increasing -integer [$sel get fragment]]
+    $sel delete
+
+    ## Now go residue-by-residue in each fragment and resnumber
+    foreach f $frags {
+	set sel [atomselect $mol "fragment $f"]
+	set res [lsort -unique -increasing -integer [$sel get residue]]
+	$sel delete
+
+	set i 0
+	foreach r $res {
+	    set sel [atomselect $mol "residue $r"]
+	    $sel set resid [incr i]
+	    $sel delete
+	}
+    }
+}
+
+## Reletter the chains in a molecule based on fragment
+proc reletter_chains {mol} {
+
+    set sel [atomselect $mol "all"]
+    set frags [lsort -unique -increasing -integer [$sel get fragment]]
+    $sel delete
+
+    set chains {A B C D E F G H I J K L M N O\
+		    P Q R S T U V W X Y Z a b c\
+		    d e f g h i j k l m n o p q r\
+		    s t u v w x y z 0 1 2 3 4 5 6\
+		    7 8 9 0}
+    set i 0
+    foreach f $frags {
+	set sel [atomselect $mol "fragment $f"]
+	$sel set chain [lindex $chains $i]
+	incr i
+    }
+}
+
+## Use bfactor column to recolor residues with chainbows
+## Create a chainbow representation to accompany
+proc chainbows {mol {addrep 0}} {
+
+    set sel [atomselect $mol "all"]
+    set frags [lsort -unique -increasing -integer [$sel get fragment]]
+    $sel delete
+
+    ## Now go residue-by-residue in each fragment and resnumber
+    foreach f $frags {
+	set sel [atomselect $mol "fragment $f"]
+	set res [lsort -unique -increasing -integer [$sel get residue]]
+	set N [llength $res]
+	$sel delete
+	
+	set i 0
+	foreach r $res {
+	    set sel [atomselect $mol "residue $r"]
+	    $sel set beta [expr { $i / double($N)}]
+	    $sel delete
+	    incr i
+	}
+    }
+
+    if {$addrep} {
+
+	## Set the color method to beta
+	set n [molinfo $mol get numreps]
+	eval "mol color beta"	
+
+	## Duplicate the representation
+	eval "mol addrep $mol"
+
+	## Adjust the colorscale
+	eval "mol scaleminmax $mol $n 0.0 1.0"
+    }
+}
