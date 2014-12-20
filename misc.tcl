@@ -62,7 +62,7 @@ proc aswithin {{min {0.0 0.0 0.0}} {max {0.0 0.0 0.0}} {molid top}} {
     if {$xmax != ""} {lappend seltxt "x <= $xmax"}
     if {$ymax != ""} {lappend seltxt "y <= $ymax"}
     if {$zmax != ""} {lappend seltxt "z <= $zmax"}
-    
+
     return ([join $seltxt " and "])
 }
 
@@ -134,23 +134,23 @@ proc striplist {args} {
 
 ## Renumber the residues in a molecule based on fragment
 proc renumber_residues {mol} {
-    
+
     set sel [atomselect $mol "all"]
     set frags [lsort -unique -increasing -integer [$sel get fragment]]
     $sel delete
 
     ## Now go residue-by-residue in each fragment and resnumber
     foreach f $frags {
-	set sel [atomselect $mol "fragment $f"]
-	set res [lsort -unique -increasing -integer [$sel get residue]]
-	$sel delete
+        set sel [atomselect $mol "fragment $f"]
+        set res [lsort -unique -increasing -integer [$sel get residue]]
+        $sel delete
 
-	set i 0
-	foreach r $res {
-	    set sel [atomselect $mol "residue $r"]
-	    $sel set resid [incr i]
-	    $sel delete
-	}
+        set i 0
+        foreach r $res {
+            set sel [atomselect $mol "residue $r"]
+            $sel set resid [incr i]
+            $sel delete
+        }
     }
 }
 
@@ -162,15 +162,15 @@ proc reletter_chains {mol} {
     $sel delete
 
     set chains {A B C D E F G H I J K L M N O\
-		    P Q R S T U V W X Y Z a b c\
-		    d e f g h i j k l m n o p q r\
-		    s t u v w x y z 0 1 2 3 4 5 6\
-		    7 8 9 0}
+                    P Q R S T U V W X Y Z a b c\
+                    d e f g h i j k l m n o p q r\
+                    s t u v w x y z 0 1 2 3 4 5 6\
+                    7 8 9 0}
     set i 0
     foreach f $frags {
-	set sel [atomselect $mol "fragment $f"]
-	$sel set chain [lindex $chains $i]
-	incr i
+        set sel [atomselect $mol "fragment $f"]
+        $sel set chain [lindex $chains $i]
+        incr i
     }
 }
 
@@ -182,32 +182,53 @@ proc chainbows {mol {addrep 0}} {
     set frags [lsort -unique -increasing -integer [$sel get fragment]]
     $sel delete
 
-    ## Now go residue-by-residue in each fragment and resnumber
+    ## Now go residue-by-residue in each fragment and renumber
     foreach f $frags {
-	set sel [atomselect $mol "fragment $f"]
-	set res [lsort -unique -increasing -integer [$sel get residue]]
-	set N [llength $res]
-	$sel delete
-	
-	set i 0
-	foreach r $res {
-	    set sel [atomselect $mol "residue $r"]
-	    $sel set beta [expr { $i / double($N)}]
-	    $sel delete
-	    incr i
-	}
+        set sel [atomselect $mol "fragment $f"]
+        set res [lsort -unique -increasing -integer [$sel get residue]]
+        set N [llength $res]
+        $sel delete
+
+        set i 0
+        foreach r $res {
+            set sel [atomselect $mol "residue $r"]
+            $sel set beta [expr { $i / double($N)}]
+            $sel delete
+            incr i
+        }
     }
 
     if {$addrep} {
 
-	## Set the color method to beta
-	set n [molinfo $mol get numreps]
-	eval "mol color beta"	
+        ## Set the color method to beta
+        set n [molinfo $mol get numreps]
+        eval "mol color beta"
 
-	## Duplicate the representation
-	eval "mol addrep $mol"
+        ## Duplicate the representation
+        eval "mol addrep $mol"
 
-	## Adjust the colorscale
-	eval "mol scaleminmax $mol $n 0.0 1.0"
+        ## Adjust the colorscale
+        eval "mol scaleminmax $mol $n 0.0 1.0"
     }
+}
+
+proc getseq {sel} {
+
+    set seq {}
+    set three [$sel get resname]
+
+    foreach s $three {
+
+        switch -exact $s {
+            GLY {lappend seq G} ALA {lappend seq A} VAL {lappend seq V}
+            LEU {lappend seq L} ILE {lappend seq I} PHE {lappend seq F}
+            TRP {lappend seq W} PRO {lappend seq P} SER {lappend seq S}
+            THR {lappend seq T} ASN {lappend seq N} GLN {lappend seq Q}
+            CYS {lappend seq C} LYS {lappend seq K} ARG {lappend seq R}
+            HIS {lappend seq H} ASP {lappend seq D} GLU {lappend seq E}
+            MET {lappend seq M} TYR {lappend seq Y}
+            default {lappend seq X} }
+
+    }
+    return [join $seq ""]
 }
