@@ -1,4 +1,7 @@
 ## Resort atom names for each residue
+## consistent with the charmm format:
+#N,CA,CB,CG,...,C,O
+
 proc lsortnames {args} {
   set newargs [lrange $args 0 end-1]
   set s [lindex $args end]
