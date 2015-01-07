@@ -232,3 +232,48 @@ proc getseq {sel} {
     }
     return [join $seq ""]
 }
+
+
+## Return rotation matrix necessary to bring vector v to axis x,y or z
+proc mytransvecinv {axis v} {
+
+    lassign $v v0 v1 v2
+
+    switch -exact $axis {
+        X -
+        x {
+            set theta [expr {-1 * atan2($v1, $v0)}]
+            set length [expr {sqrt($v1 * $v1 + $v0 * $v0)}]
+            set phi [expr {atan2($v2, $length)}]
+
+            set m1 [transaxis y $phi rad]
+            set m2 [transaxis z $theta rad]
+
+            return [transmult $m2 $m1]
+        }
+        Y -
+        y {
+            set theta [expr {-1 * atan2($v2, $v1)}]
+            set length [expr {sqrt($v2 * $v2 + $v1 * $v1)}]
+            set phi [expr {atan2($v0, $length)}]
+
+            set m1 [transaxis z $phi rad]
+            set m2 [transaxis x $theta rad]
+
+            return [transmult $m2 $m1]
+        }
+        Z -
+        z {
+            set theta [expr {-1 * atan2($v0, $v2)}]
+            set length [expr {sqrt($v0 * $v0 + $v2 * $v2)}]
+            set phi [expr {atan2($v1, $length)}]
+
+            set m1 [transaxis x $phi rad]
+            set m2 [transaxis y $theta rad]
+
+            return [transmult $m2 $m1]
+        }
+
+        default {return [transidentity]}
+    }
+}
