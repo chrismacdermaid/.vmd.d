@@ -40,6 +40,26 @@ proc boxby2 {{molid top} {guess 0}} {
     return [vecscale [molinfo top get {a b c}] 0.5]
 }
 
+## Wrap trajectory with common options
+proc wrap {{molid top} {opts {-all -center origin -compound fragment}}} {
+
+    if {[catch {package present "pbctools"}]} {
+        package require pbctools
+    }
+
+    pbc wrap {*}$opts -molid $molid
+}
+
+## UnWrap trajectory
+proc unwrap {{molid top} {opts {}}} {
+
+    if {[catch {package present "pbctools"}]} {
+        package require pbctools
+    }
+
+    pbc unwrap {*}$opts -molid $molid
+}
+
 ## Alias atomselect. I'm so tired of typing "atomselect"
 proc as_alias {} {
     interp alias {} as {} atomselect
@@ -232,7 +252,6 @@ proc getseq {sel} {
     }
     return [join $seq ""]
 }
-
 
 ## Return rotation matrix necessary to bring vector v to axis x,y or z
 proc mytransvecinv {axis v} {
