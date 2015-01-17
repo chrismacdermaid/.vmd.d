@@ -563,7 +563,6 @@ if {[namespace exists TopoTools]} {
     }
 }
 
-<<<<<<< HEAD
 ## Apply Viewpoint across mols
 user add key C {
     set molid [molinfo top]
