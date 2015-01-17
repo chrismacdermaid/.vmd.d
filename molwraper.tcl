@@ -85,3 +85,11 @@ proc moll { args } {
 
     return $retval
 }
+
+
+## If we passed arguments to load files
+if {[expr {$argc != 0}]\
+  && [string match "load" [lindex $argv 0]]} {
+    set newargs [lrange $argv 1 end]
+    moll {*}$newargs
+}
