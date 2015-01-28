@@ -16,13 +16,13 @@ proc moll { args } {
             if {[string match "*.data" $filename]} {
                 ## Assume lammps data
                 catch {topo readlammpsdata\
-                  [file normalize [glob $filename]]} retval
+			   [file normalize [glob $filename]]} retval
 
-            } elseif {[string match "*.xsc"]\
-              || [string match "*.xst"]} {
-              ## pbc dimensions
+            } elseif {[string match "*.xsc" $filename]\
+			  || [string match "*.xst" $filename]} {
+		## pbc dimensions
                 catch {moll -xst\
-                     [file normalize [glob $filename]]} retval
+			   [file normalize [glob $filename]]} retval
 
             } else {
                 catch {mol new [file normalize [glob $filename]]\
@@ -79,7 +79,7 @@ proc moll { args } {
             set retval [reload {*}$newargs]
         }
 
-        default {set retval [mol {*}$args]}
+	default {set retval [mol {*}$args]}
 
     }
 
