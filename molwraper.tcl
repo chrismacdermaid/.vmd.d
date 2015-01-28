@@ -67,6 +67,9 @@ proc moll { args } {
                 return -code error -1
             }
 
+	    vmdcon -info  [format "Read box dimensions: %8.4f %8.4f %8.4f"\
+			       $ax $by $cz]
+
             ## Provide the dimensions as a return value
             set retval [list $ax $by $cz]
         }
