@@ -102,10 +102,13 @@ after idle {
     color change rgb 3 0.7 0.4 0.0 ;# orange
     color change rgb 4 0.8 0.7 0.1 ;# yellow
     color change rgb 7 0.1 0.7 0.2 ;# green
+
+    foreach p {topotools qwrap cg} {
+      catch {package require $p}
+    }
 }
 
 display projection orthographic
-catch {package require topotools}
 
 # +-------------------------+
 # | Autoload custom plugins |

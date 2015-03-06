@@ -20,6 +20,11 @@ proc setbox {{molid top} {seltext all} {tweak {0.0 0.0 0.0}}} {
     $sel delete
 }
 
+proc displayscale {scale} {
+  lassign [vecscale [display get size] $scale] x y
+  display resize [expr {int($x)}] [expr {int($y)}]
+}
+
 ## Write out a xsc/xst, guess box dims if necessary
 proc writebox {fname {molid top} {guess 0}} {
     if {[catch {package present "pbctools"}]} {
